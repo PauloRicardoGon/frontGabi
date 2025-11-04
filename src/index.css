@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import "tailwindcss";
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+.form-azul label {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.form-azul .campo {
+  margin-bottom: 0.5rem; /* controla todos os campos juntos */
+}
+
+.form-azul input,
+.form-azul select,
+.form-azul textarea {
+  background-color: #D6E4FF;
+  color: rgb(0, 0, 0);
+  padding: 0.5rem;
+  border: none; /* remove todas as bordas */
+  border-radius: 0.5rem 0.5rem 0 0; /* apenas superior arredondada */
+  
+  /* sombra em vez de linha */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+
+  outline: none;
+  transition: box-shadow 0.3s ease;
+}
+
+.form-azul input:focus,
+.form-azul select:focus,
+.form-azul textarea:focus {
+  /* sombra mais intensa ao focar */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+.form-azul input::placeholder,
+.form-azul textarea::placeholder {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.form-azul input:focus,
+.form-azul select:focus,
+.form-azul textarea:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
