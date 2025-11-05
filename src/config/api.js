@@ -6,7 +6,7 @@ const sanitizeBaseUrl = (url) => {
   return url.endsWith("/") ? url.slice(0, -1) : url;
 };
 
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://192.168.0.11:3000";
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
 export const API_BASE_URL = sanitizeBaseUrl(rawBaseUrl);
 

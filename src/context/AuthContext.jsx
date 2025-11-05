@@ -1,5 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { buildApiUrl } from "../config/api";
 
@@ -20,7 +26,9 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(() => getStoredObject("user"));
   const [token, setToken] = useState(() => localStorage.getItem("token"));
-  const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem("refreshToken"));
+  const [refreshToken, setRefreshToken] = useState(() =>
+    localStorage.getItem("refreshToken")
+  );
   const [loading, setLoading] = useState(true);
 
   const persistUser = useCallback((value) => {
@@ -97,7 +105,13 @@ export const AuthProvider = ({ children }) => {
     }
 
     return payload.token;
-  }, [clearSession, persistRefreshToken, persistToken, persistUser, refreshToken]);
+  }, [
+    clearSession,
+    persistRefreshToken,
+    persistToken,
+    persistUser,
+    refreshToken,
+  ]);
 
   const authorizedRequest = useCallback(
     async (endpoint, options = {}) => {
@@ -146,7 +160,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       const attempt = async (authToken) => {
-        const response = await fetch(buildApiUrl("/users/user-details"), {
+        const response = await fetch(buildApiUrl("/users"), {
           headers: {
             Accept: "application/json",
             Authorization: `Bearer ${authToken}`,
@@ -156,7 +170,9 @@ export const AuthProvider = ({ children }) => {
         const payload = await response.json().catch(() => null);
 
         if (!response.ok) {
-          const error = new Error(payload?.error ?? "Erro ao carregar dados do usuário");
+          const error = new Error(
+            payload?.error ?? "Erro ao carregar dados do usuário"
+          );
           error.status = response.status;
           throw error;
         }
@@ -215,7 +231,10 @@ export const AuthProvider = ({ children }) => {
       try {
         await fetchUserDetails(payload.token);
       } catch (error) {
-        console.warn("Não foi possível carregar os detalhes do usuário:", error);
+        console.warn(
+          "Não foi possível carregar os detalhes do usuário:",
+          error
+        );
       }
 
       navigate("/dashboard");

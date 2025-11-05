@@ -1,5 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useAuth } from "./AuthContext";
 
 const CustomerContext = createContext();
@@ -13,18 +20,21 @@ const formatCpfCnpj = (value = "") => {
   }
 
   if (digits.length === 14) {
-    return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+    return digits.replace(
+      /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+      "$1.$2.$3/$4-$5"
+    );
   }
 
   return value;
 };
 
 const selectPreferredPhone = (customer) =>
-  customer.celularwhatsapp ??
-  customer.telefonewhatsapp1 ??
-  customer.telefonewhatsapp2 ??
-  customer.telefone1 ??
-  customer.telefone2 ??
+  customer.celularwhatsapp ||
+  customer.telefonewhatsapp1 ||
+  customer.telefonewhatsapp2 ||
+  customer.telefone1 ||
+  customer.telefone2 ||
   "";
 
 const formatAddress = (address) => {
@@ -75,7 +85,7 @@ export const CustomerProvider = ({ children }) => {
     setError(null);
 
     try {
-      const response = await authorizedRequest("/clientes");
+      const response = await authorizedRequest("/customers?razaoSocial=");
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
@@ -123,7 +133,9 @@ export const CustomerProvider = ({ children }) => {
 
   const getCustomerForEdition = useCallback(
     (id) => {
-      const match = customers.find((customer) => String(customer.idCliente) === String(id));
+      const match = customers.find(
+        (customer) => String(customer.idCliente) === String(id)
+      );
 
       if (!match) {
         return null;
@@ -150,4 +162,3 @@ export const CustomerProvider = ({ children }) => {
     </CustomerContext.Provider>
   );
 };
-
