@@ -21,7 +21,8 @@ export default function Login() {
     try {
       await login(formData.username, formData.password);
     } catch (err) {
-      setError("Falha no login. Verifique suas credenciais.");
+      console.error("Falha no login:", err);
+      setError(err.message || "Falha no login. Verifique suas credenciais.");
     } finally {
       setLoading(false);
     }
