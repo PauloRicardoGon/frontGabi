@@ -65,14 +65,16 @@ export const AuthProvider = ({ children }) => {
   }, [clearSession, navigate]);
 
   const refreshTokens = useCallback(async () => {
-    if (!refreshToken) {
+    const tokenToRefresh = refreshToken ?? localStorage.getItem("refreshToken");
+
+    if (!tokenToRefresh) {
       throw new Error("Refresh token ausente");
     }
 
     const response = await fetch(buildApiUrl("/users/refresh"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
+      body: JSON.stringify({ refreshToken: tokenToRefresh }),
     });
 
     const payload = await response.json().catch(() => null);
@@ -258,18 +260,30 @@ export const AuthProvider = ({ children }) => {
       try {
         await fetchUserDetails(token);
       } catch (error) {
-        console.error("Sessão inválida, tentando renovar o token:", error);
+        console.error("Sessão inválida ao restaurar dados do usuário:", error);
 
-        if (refreshToken) {
-          try {
-            const newToken = await refreshTokens();
-            await fetchUserDetails(newToken);
-          } catch (refreshError) {
-            console.error("Não foi possível renovar a sessão:", refreshError);
+        const availableRefreshToken = refreshToken ?? localStorage.getItem("refreshToken");
+
+        if (error?.status === 401) {
+          if (availableRefreshToken) {
+            try {
+              const newToken = await refreshTokens();
+              await fetchUserDetails(newToken);
+              return;
+            } catch (refreshError) {
+              console.error("Não foi possível renovar a sessão:", refreshError);
+              clearSession();
+            }
+          } else {
+            console.warn(
+              "Refresh token indisponível durante a restauração da sessão; limpando sessão."
+            );
             clearSession();
           }
         } else {
-          clearSession();
+          console.warn(
+            "Mantendo a sessão ativa apesar do erro, pois a falha não foi de autenticação."
+          );
         }
       } finally {
         setLoading(false);
