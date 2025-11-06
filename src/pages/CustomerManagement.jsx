@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import Layout from "../app/Layout";
 import CustomerCard from "../components/clients/CustomerCard";
-import { useCustomers } from "../context/CustomerContext";
+import { useCustomers } from "../hooks/useCustomers";
 
 export default function CustomerManagement() {
   const [searchTerm, setSearchTerm] = useState("");

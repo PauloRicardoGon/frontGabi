@@ -2,15 +2,13 @@
 import React, {
   createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
 } from "react";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../hooks/useAuth";
 
-const CustomerContext = createContext();
-export const useCustomers = () => useContext(CustomerContext);
+export const CustomerContext = createContext();
 
 const formatCpfCnpj = (value = "") => {
   const digits = value.replace(/\D/g, "");
