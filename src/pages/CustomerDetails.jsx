@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import Layout from "../app/Layout";
 import CustomerFormFields from "../components/clients/CustomerFormFields";
+import { StatusNotice } from "../components/ui";
 import useAuth from "../hooks/useAuth";
 import { getCustomerById } from "../services/clientService";
 
@@ -21,28 +22,94 @@ const initialFormState = {
   cidade: "",
 };
 
+const buildMissingCustomerMessage = () => ({
+  variant: "warning",
+  title: "Dados do cliente indisponíveis",
+  description:
+    "Os dados do cliente solicitado não estão disponíveis no momento. Tente novamente mais tarde.",
+  allowRetry: true,
+});
+
+const resolveStatusMessage = (error) => {
+  if (!error) {
+    return buildMissingCustomerMessage();
+  }
+
+  if (error.name === "TypeError") {
+    return {
+      variant: "error",
+      title: "Erro de conexão",
+      description:
+        "Não foi possível se comunicar com o servidor. Verifique sua conexão com a internet e tente novamente.",
+      allowRetry: true,
+    };
+  }
+
+  if (error.status === 404) {
+    return {
+      variant: "warning",
+      title: "Cliente não encontrado",
+      description:
+        "Os dados do cliente solicitado não estão disponíveis. Ele pode ter sido removido ou você não possui acesso.",
+      allowRetry: false,
+    };
+  }
+
+  if (error.status === 401) {
+    return {
+      variant: "error",
+      title: "Acesso não autorizado",
+      description:
+        "Sua sessão expirou ou você não possui acesso a este cliente. Faça login novamente e tente outra vez.",
+      allowRetry: true,
+    };
+  }
+
+  return {
+    variant: "error",
+    title: "Erro ao carregar cliente",
+    description:
+      error.message ?? "Não foi possível carregar os dados do cliente no momento.",
+    allowRetry: true,
+  };
+};
+
 export default function CustomerDetails() {
   const { id } = useParams();
   const [customer, setCustomer] = useState(null);
   const [form, setForm] = useState(initialFormState);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const { authorizedRequest } = useAuth();
+  const [statusMessage, setStatusMessage] = useState(null);
+  const [reloadToken, setReloadToken] = useState(0);
+  const { authorizedRequest, refreshToken, refreshTokens } = useAuth();
+
+  const canRefresh = useMemo(() => Boolean(refreshToken), [refreshToken]);
 
   useEffect(() => {
     let isActive = true;
 
     const fetchCustomer = async () => {
       if (!id) {
+        if (isActive) {
+          setCustomer(null);
+          setForm(initialFormState);
+          setStatusMessage(buildMissingCustomerMessage());
+          setLoading(false);
+        }
         return;
       }
 
-      setLoading(true);
-      setError(null);
+      if (isActive) {
+        setLoading(true);
+        setStatusMessage(null);
+        setCustomer(null);
+      }
 
       try {
         const { customer: fetchedCustomer, form: fetchedForm } =
-          await getCustomerById(authorizedRequest, id);
+          await getCustomerById(authorizedRequest, id, {
+            refreshTokens: canRefresh ? refreshTokens : undefined,
+          });
 
         if (!isActive) {
           return;
@@ -61,6 +128,7 @@ export default function CustomerDetails() {
         });
 
         setForm(nextFormState);
+        setStatusMessage(null);
       } catch (err) {
         if (!isActive) {
           return;
@@ -68,7 +136,8 @@ export default function CustomerDetails() {
 
         console.error("Erro ao carregar cliente:", err);
         setCustomer(null);
-        setError(err);
+        setForm(initialFormState);
+        setStatusMessage(resolveStatusMessage(err));
       } finally {
         if (isActive) {
           setLoading(false);
@@ -81,7 +150,15 @@ export default function CustomerDetails() {
     return () => {
       isActive = false;
     };
-  }, [authorizedRequest, id]);
+  }, [
+    authorizedRequest,
+    canRefresh,
+    id,
+    refreshTokens,
+    reloadToken,
+  ]);
+
+  const handleRetry = () => setReloadToken((prev) => prev + 1);
 
   const handleChange = (event) => {
     const { name, type, value, checked } = event.target;
@@ -99,11 +176,19 @@ export default function CustomerDetails() {
     );
   }
 
-  if (error) {
+  if (statusMessage) {
     return (
       <Layout title="Detalhes do Cliente">
-        <div className="p-10 text-red-600">
-          {error.message ?? "Não foi possível carregar os dados do cliente."}
+        <div className="p-10">
+          <StatusNotice
+            variant={statusMessage.variant}
+            title={statusMessage.title}
+            description={statusMessage.description}
+            actionLabel={
+              statusMessage.allowRetry ? "Tentar novamente" : undefined
+            }
+            onAction={statusMessage.allowRetry ? handleRetry : undefined}
+          />
         </div>
       </Layout>
     );
@@ -112,7 +197,15 @@ export default function CustomerDetails() {
   if (!customer) {
     return (
       <Layout title="Detalhes do Cliente">
-        <div className="p-10 text-gray-500">Cliente não encontrado.</div>
+        <div className="p-10">
+          <StatusNotice
+            variant="warning"
+            title="Dados do cliente indisponíveis"
+            description="Não encontramos os dados solicitados no momento."
+            actionLabel="Tentar novamente"
+            onAction={handleRetry}
+          />
+        </div>
       </Layout>
     );
   }

@@ -36,9 +36,13 @@ const resolveCustomerErrorMessage = (status, payload) => {
   }
 };
 
-export const getCustomerById = async (authorizedRequest, id) => {
+export const getCustomerById = async (authorizedRequest, id, options = {}) => {
+  const { tokenOverride, requestOptions } = options;
+
   const response = await authorizedRequest(
-    `/customers/${encodeURIComponent(id)}`
+    `/customers/${encodeURIComponent(id)}`,
+    requestOptions ?? {},
+    tokenOverride
   );
   const payload = await parseJson(response);
 

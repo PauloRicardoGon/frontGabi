@@ -1,5 +1,27 @@
 import { getCustomerById as getCustomerByIdApi } from "../api/clients.js";
 
+const customerCache = new Map();
+
+const getCustomerCacheKey = (id) => {
+  if (id === null || id === undefined) {
+    return null;
+  }
+
+  return String(id);
+};
+
+export const clearCustomerCache = () => {
+  customerCache.clear();
+};
+
+export const invalidateCustomerCache = (id) => {
+  const cacheKey = getCustomerCacheKey(id);
+
+  if (cacheKey) {
+    customerCache.delete(cacheKey);
+  }
+};
+
 export const formatCpfCnpj = (value = "") => {
   const digits = value.replace(/\D/g, "");
 
@@ -275,12 +297,46 @@ export const mapCustomerForEdition = (customer = {}) => {
 export const mapCustomersForEdition = (customers = []) =>
   customers.map((customer) => mapCustomerForEdition(customer));
 
-export const getCustomerById = async (authorizedRequest, id) => {
-  const payload = await getCustomerByIdApi(authorizedRequest, id);
-  const normalized = normalizeCustomerPayload(payload);
+export const getCustomerById = async (
+  authorizedRequest,
+  id,
+  { refreshTokens, forceRefresh = false } = {}
+) => {
+  const cacheKey = getCustomerCacheKey(id);
 
-  return {
-    customer: normalized,
-    form: mapCustomerForEdition(payload),
+  if (!forceRefresh && cacheKey && customerCache.has(cacheKey)) {
+    return customerCache.get(cacheKey);
+  }
+
+  const fetchCustomer = async (tokenOverride) => {
+    const payload = await getCustomerByIdApi(authorizedRequest, id, {
+      tokenOverride,
+    });
+    const normalized = normalizeCustomerPayload(payload);
+
+    const result = {
+      customer: normalized,
+      form: mapCustomerForEdition(payload),
+    };
+
+    if (cacheKey) {
+      customerCache.set(cacheKey, result);
+    }
+
+    return result;
   };
+
+  try {
+    return await fetchCustomer();
+  } catch (error) {
+    const shouldAttemptRefresh =
+      error?.status === 401 && typeof refreshTokens === "function";
+
+    if (!shouldAttemptRefresh) {
+      throw error;
+    }
+
+    const freshToken = await refreshTokens();
+    return fetchCustomer(freshToken);
+  }
 };
