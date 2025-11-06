@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Menu } from "lucide-react";
 
-export default function Layout({ children }) {
+export default function Layout({ title, children }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -15,7 +15,11 @@ export default function Layout({ children }) {
           {isOpen ? <X /> : <Menu />}
         </button>
 
-        <h1 className="absolute left-1/2 transform -translate-x-1/2 text-xl font-semibold"></h1>
+        {title ? (
+          <h1 className="absolute left-1/2 transform -translate-x-1/2 text-xl font-semibold">
+            {title}
+          </h1>
+        ) : null}
       </header>
 
       {/* Overlay */}

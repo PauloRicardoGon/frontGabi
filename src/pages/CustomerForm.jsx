@@ -1,8 +1,8 @@
 import { useState, Fragment } from "react";
 import { Listbox, Transition } from "@headlessui/react";
 import { Check } from "lucide-react";
-import Layout from "../components/Layout";
-import { FaWhatsapp } from "react-icons/fa";
+import Layout from "../app/Layout";
+import CustomerFormFields from "../components/clients/CustomerFormFields";
 
 const tiposCliente = [
   { id: "fisica", nome: "Pessoa Física" },
@@ -157,122 +157,12 @@ export default function CustomerForm() {
           </>
         )}
 
-{/* Campos comuns */}
-{["telefone1", "telefone2", "celular"].map((campo, i) => {
-  const whatsappKey = `whatsapp${i === 2 ? "Celular" : i + 1}`;
-  const isChecked = form[whatsappKey];
-
-  return (
-    <div key={campo} className="campo flex items-center gap-2">
-      <div className="flex-1">
-        <label className="block font-semibold mb-1">{campo}</label>
-        <input
-          type="text"
-          name={campo}
-          value={form[campo]}
+        {/* Campos comuns */}
+        <CustomerFormFields
+          form={form}
           onChange={handleChange}
-          className="w-full"
+          onCepBlur={handleCepBlur}
         />
-      </div>
-
-      <label className="flex items-center gap-1 mt-6 cursor-pointer">
-        <input
-          type="checkbox"
-          name={whatsappKey}
-          checked={isChecked}
-          onChange={handleChange}
-        />
-        <FaWhatsapp
-          className={`text-xl transition-colors duration-200 ${
-            isChecked ? "text-green-500" : "text-black"
-          }`}
-        />
-      </label>
-    </div>
-  );
-})}
-
-
-        {/* Email */}
-        <div className="campo">
-          <label className="block font-semibold mb-1">Email</label>
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            className="w-full"
-          />
-        </div>
-
-        {/* Endereço */}
-        <div className="campo">
-          <label className="block font-semibold mb-1">CEP</label>
-          <input
-            type="text"
-            name="cep"
-            value={form.cep}
-            onChange={handleChange}
-            onBlur={handleCepBlur}
-            className="w-full"
-          />
-        </div>
-        <div className="campo">
-          <label className="block font-semibold mb-1">Endereço</label>
-          <input
-            type="text"
-            name="endereco"
-            value={form.endereco}
-            onChange={handleChange}
-            className="w-full"
-          />
-        </div>
-
-        {/* Número / Complemento / Bairro */}
-        <div className="mb-4 grid grid-cols-3 gap-2">
-          <div>
-            <label className="block font-semibold mb-1">Número</label>
-            <input
-              type="text"
-              name="numero"
-              value={form.numero}
-              onChange={handleChange}
-              className="w-full"
-            />
-          </div>
-          <div>
-            <label className="block font-semibold mb-1">Complemento</label>
-            <input
-              type="text"
-              name="complemento"
-              value={form.complemento}
-              onChange={handleChange}
-              className="w-full"
-            />
-          </div>
-          <div>
-            <label className="block font-semibold mb-1">Bairro</label>
-            <input
-              type="text"
-              name="bairro"
-              value={form.bairro}
-              onChange={handleChange}
-              className="w-full"
-            />
-          </div>
-        </div>
-
-        {/* Cidade */}
-        <div className="campo">
-          <label className="block font-semibold mb-1">Cidade</label>
-          <input
-            type="text"
-            name="cidade"
-            value={form.cidade}
-            onChange={handleChange}
-            className="w-full"
-          />
-        </div>
 
         {/* Botões */}
         <div className="flex items-center mt-6 gap-4">
