@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import Layout from "../components/Layout";
-import CustomerCard from "../components/CustomerCard";
+import Layout from "../app/Layout";
+import CustomerCard from "../components/clients/CustomerCard";
 import { useCustomers } from "../context/CustomerContext";
 
 export default function CustomerManagement() {
