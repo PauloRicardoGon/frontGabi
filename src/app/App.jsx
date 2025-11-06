@@ -1,10 +1,10 @@
 import { Routes, Route } from "react-router-dom";
-import Login from "./pages/Login";
-import CustomerManagement from "./pages/CustomerManagement";
-import CustomerDetails from "./pages/CustomerDetails";
-import CustomerForm from "./pages/CustomerForm";
-import Dashboard from "./pages/Dashboard";
-import PrivateRoute from "./components/PrivateRoute";
+import Login from "../pages/Login";
+import CustomerManagement from "../pages/CustomerManagement";
+import CustomerDetails from "../pages/CustomerDetails";
+import CustomerForm from "../pages/CustomerForm";
+import Dashboard from "../pages/Dashboard";
+import PrivateRoute from "../routes/PrivateRoute";
 
 export default function App() {
   return (
