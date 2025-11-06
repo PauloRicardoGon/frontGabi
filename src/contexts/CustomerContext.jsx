@@ -6,66 +6,15 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { fetchCustomers as fetchCustomersApi } from "../api/clients";
 import { useAuth } from "../hooks/useAuth";
+import {
+  mapCustomerForEdition,
+  mapCustomersForEdition,
+  mapCustomersToCards,
+} from "../services/clientService";
 
 export const CustomerContext = createContext();
-
-const formatCpfCnpj = (value = "") => {
-  const digits = value.replace(/\D/g, "");
-
-  if (digits.length === 11) {
-    return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-  }
-
-  if (digits.length === 14) {
-    return digits.replace(
-      /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
-      "$1.$2.$3/$4-$5"
-    );
-  }
-
-  return value;
-};
-
-const selectPreferredPhone = (customer) =>
-  customer.celularwhatsapp ||
-  customer.telefonewhatsapp1 ||
-  customer.telefonewhatsapp2 ||
-  customer.telefone1 ||
-  customer.telefone2 ||
-  "";
-
-const formatAddress = (address) => {
-  if (!address) {
-    return {
-      street: "",
-      number: "",
-      complement: "",
-      district: "",
-      city: "",
-      formatted: "",
-    };
-  }
-
-  const street = address.logradouro ?? "";
-  const number = address.numero ?? "";
-  const complement = address.complemento ?? "";
-  const district = address.bairro ?? "";
-  const city = address.cidade ?? "";
-
-  const formatted = [street, number, complement, district, city]
-    .filter(Boolean)
-    .join(", ");
-
-  return {
-    street,
-    number,
-    complement,
-    district,
-    city,
-    formatted,
-  };
-};
 
 export const CustomerProvider = ({ children }) => {
   const { token, authorizedRequest } = useAuth();
@@ -83,17 +32,7 @@ export const CustomerProvider = ({ children }) => {
     setError(null);
 
     try {
-      const response = await authorizedRequest("/customers?razaoSocial=");
-      const payload = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(payload?.error ?? "Erro ao carregar clientes");
-      }
-
-      if (!Array.isArray(payload)) {
-        throw new Error("Resposta inválida ao carregar clientes");
-      }
-
+      const payload = await fetchCustomersApi(authorizedRequest);
       setCustomers(payload);
     } catch (err) {
       console.error("Erro ao buscar clientes:", err);
@@ -109,23 +48,12 @@ export const CustomerProvider = ({ children }) => {
   }, [fetchCustomers]);
 
   const customersForCards = useMemo(
-    () =>
-      customers.map((customer) => ({
-        id: customer.idCliente,
-        name: customer.razaoSocial ?? "",
-        document: formatCpfCnpj(customer.cpfCnpj ?? ""),
-        phone: selectPreferredPhone(customer),
-        address: formatAddress(customer.endereco),
-      })),
+    () => mapCustomersToCards(customers),
     [customers]
   );
 
   const customersForEdition = useMemo(
-    () =>
-      customers.map((customer) => {
-        const { idCliente: _idCliente, ...rest } = customer;
-        return { ...rest };
-      }),
+    () => mapCustomersForEdition(customers),
     [customers]
   );
 
@@ -139,8 +67,7 @@ export const CustomerProvider = ({ children }) => {
         return null;
       }
 
-      const { idCliente: _idCliente, ...rest } = match;
-      return { ...rest };
+      return mapCustomerForEdition(match);
     },
     [customers]
   );

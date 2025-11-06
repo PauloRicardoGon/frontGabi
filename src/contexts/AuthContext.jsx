@@ -1,6 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  login as loginApi,
+  refreshTokens as refreshTokensApi,
+  fetchUserDetails as fetchUserDetailsApi,
+} from "../api/auth";
 import { buildApiUrl } from "../config/api";
 
 export const AuthContext = createContext();
@@ -70,34 +75,23 @@ export const AuthProvider = ({ children }) => {
       throw new Error("Refresh token ausente");
     }
 
-    const response = await fetch(buildApiUrl("/users/refresh"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
-    });
+    try {
+      const payload = await refreshTokensApi(refreshToken);
+      persistToken(payload.token);
 
-    const payload = await response.json().catch(() => null);
+      if (payload.refreshToken) {
+        persistRefreshToken(payload.refreshToken);
+      }
 
-    if (!response.ok) {
+      if (payload.user) {
+        persistUser(payload.user);
+      }
+
+      return payload.token;
+    } catch (error) {
       clearSession();
-      throw new Error(payload?.error ?? "Não foi possível renovar a sessão");
+      throw error;
     }
-
-    if (!payload?.token) {
-      clearSession();
-      throw new Error("Resposta inválida do servidor");
-    }
-
-    persistToken(payload.token);
-    if (payload.refreshToken) {
-      persistRefreshToken(payload.refreshToken);
-    }
-
-    if (payload.user) {
-      persistUser(payload.user);
-    }
-
-    return payload.token;
   }, [
     clearSession,
     persistRefreshToken,
@@ -153,29 +147,13 @@ export const AuthProvider = ({ children }) => {
       }
 
       const attempt = async (authToken) => {
-        const response = await fetch(buildApiUrl("/users"), {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
+        const userDetails = await fetchUserDetailsApi(authToken);
 
-        const payload = await response.json().catch(() => null);
-
-        if (!response.ok) {
-          const error = new Error(
-            payload?.error ?? "Erro ao carregar dados do usuário"
-          );
-          error.status = response.status;
-          throw error;
+        if (userDetails) {
+          persistUser(userDetails);
         }
 
-        if (payload?.user) {
-          persistUser(payload.user);
-          return payload.user;
-        }
-
-        return null;
+        return userDetails;
       };
 
       try {
@@ -194,22 +172,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(
     async (username, password) => {
-      const response = await fetch(buildApiUrl("/users/login"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ login: username, password }),
-      });
-
-      const payload = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(payload?.error ?? "Erro ao fazer login");
-      }
-
-      if (!payload?.token) {
-        throw new Error("Token não recebido");
-      }
-
+      const payload = await loginApi(username, password);
       persistToken(payload.token);
       if (payload.refreshToken) {
         persistRefreshToken(payload.refreshToken);
