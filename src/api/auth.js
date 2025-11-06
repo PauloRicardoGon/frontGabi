@@ -9,6 +9,24 @@ const parseJson = async (response) => {
   }
 };
 
+const normalizeAuthPayload = (payload, fallbackMessage) => {
+  if (!payload || typeof payload !== "object") {
+    throw new Error(fallbackMessage);
+  }
+
+  const { token, refreshToken, user } = payload;
+
+  if (!token || typeof token !== "string") {
+    throw new Error("Token não recebido");
+  }
+
+  return {
+    token,
+    refreshToken: typeof refreshToken === "string" ? refreshToken : null,
+    user: user ?? null,
+  };
+};
+
 export const login = async (username, password) => {
   const response = await fetch(buildApiUrl("/users/login"), {
     method: "POST",
@@ -22,11 +40,7 @@ export const login = async (username, password) => {
     throw new Error(payload?.error ?? "Erro ao fazer login");
   }
 
-  if (!payload?.token) {
-    throw new Error("Token não recebido");
-  }
-
-  return payload;
+  return normalizeAuthPayload(payload, "Resposta inválida do servidor");
 };
 
 export const refreshTokens = async (refreshToken) => {
@@ -46,11 +60,7 @@ export const refreshTokens = async (refreshToken) => {
     throw new Error(payload?.error ?? "Não foi possível renovar a sessão");
   }
 
-  if (!payload?.token) {
-    throw new Error("Resposta inválida do servidor");
-  }
-
-  return payload;
+  return normalizeAuthPayload(payload, "Resposta inválida do servidor");
 };
 
 export const fetchUserDetails = async (token) => {

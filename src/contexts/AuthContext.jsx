@@ -1,11 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  login as loginApi,
-  refreshTokens as refreshTokensApi,
-  fetchUserDetails as fetchUserDetailsApi,
-} from "../api/auth";
+import { login as loginApi, refreshTokens as refreshTokensApi } from "../api/auth";
 import { buildApiUrl } from "../config/api";
 
 export const AuthContext = createContext();
@@ -79,9 +75,12 @@ export const AuthProvider = ({ children }) => {
       const payload = await refreshTokensApi(refreshToken);
       persistToken(payload.token);
 
-      if (payload.refreshToken) {
-        persistRefreshToken(payload.refreshToken);
-      }
+      const nextRefreshToken =
+        typeof payload.refreshToken === "string"
+          ? payload.refreshToken
+          : refreshToken ?? null;
+
+      persistRefreshToken(nextRefreshToken);
 
       if (payload.user) {
         persistUser(payload.user);
@@ -101,22 +100,38 @@ export const AuthProvider = ({ children }) => {
   ]);
 
   const authorizedRequest = useCallback(
-    async (endpoint, options = {}) => {
-      if (!token) {
+    async (endpoint, options = {}, tokenOverride) => {
+      const tokenToUse = tokenOverride ?? token;
+
+      if (!tokenToUse) {
         throw new Error("Usuário não autenticado");
       }
 
-      const attempt = async (tokenToUse) =>
-        fetch(buildApiUrl(endpoint), {
-          ...options,
-          headers: {
-            Accept: "application/json",
-            ...(options.headers || {}),
-            Authorization: `Bearer ${tokenToUse}`,
-          },
-        });
+      const attempt = async (tokenCandidate) => {
+        const providedHeaders = options.headers ?? {};
+        let headers;
 
-      let response = await attempt(token);
+        if (providedHeaders instanceof Headers) {
+          headers = Object.fromEntries(providedHeaders.entries());
+        } else if (Array.isArray(providedHeaders)) {
+          headers = Object.fromEntries(providedHeaders);
+        } else {
+          headers = { ...providedHeaders };
+        }
+
+        if (!("Accept" in headers) && !("accept" in headers)) {
+          headers.Accept = "application/json";
+        }
+
+        headers.Authorization = `Bearer ${tokenCandidate}`;
+
+        return fetch(buildApiUrl(endpoint), {
+          ...options,
+          headers,
+        });
+      };
+
+      let response = await attempt(tokenToUse);
 
       if (response.status === 401 && refreshToken) {
         try {
@@ -146,37 +161,42 @@ export const AuthProvider = ({ children }) => {
         throw new Error("Token ausente");
       }
 
-      const attempt = async (authToken) => {
-        const userDetails = await fetchUserDetailsApi(authToken);
+      const response = await authorizedRequest(
+        "/users",
+        {
+          headers: {
+            Accept: "application/json",
+          },
+        },
+        tokenToUse
+      );
 
-        if (userDetails) {
-          persistUser(userDetails);
-        }
+      const payload = await response.json().catch(() => null);
 
-        return userDetails;
-      };
-
-      try {
-        return await attempt(tokenToUse);
-      } catch (error) {
-        if (error.status === 401 && refreshToken) {
-          const newToken = await refreshTokens();
-          return attempt(newToken);
-        }
-
+      if (!response.ok) {
+        const error = new Error(
+          payload?.error ?? "Erro ao carregar dados do usuário"
+        );
+        error.status = response.status;
         throw error;
       }
+
+      const userDetails = payload?.user ?? null;
+
+      if (userDetails) {
+        persistUser(userDetails);
+      }
+
+      return userDetails;
     },
-    [persistUser, refreshToken, refreshTokens, token]
+    [authorizedRequest, persistUser, token]
   );
 
   const login = useCallback(
     async (username, password) => {
       const payload = await loginApi(username, password);
       persistToken(payload.token);
-      if (payload.refreshToken) {
-        persistRefreshToken(payload.refreshToken);
-      }
+      persistRefreshToken(payload.refreshToken ?? null);
 
       if (payload.user) {
         persistUser(payload.user);
