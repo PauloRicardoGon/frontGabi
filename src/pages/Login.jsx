@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { branding } from "../config/branding";
+import { Button, Input } from "../components/ui";
 
 export default function Login() {
   const { login } = useAuth();
@@ -41,55 +42,55 @@ export default function Login() {
           </div>
 
           {/* Campo Usuário */}
-          <div className="mb-4">
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              placeholder="Digite seu usuário"
-              className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#37618E] focus:border-[#37618E]"
-              required
-            />
-          </div>
+          <Input
+            label="Usuário"
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="Digite seu usuário"
+            autoComplete="username"
+            className="focus:ring-2 focus:ring-[#37618E] focus:border-[#37618E]"
+          />
 
           {/* Campo Senha */}
-          <div className="mb-6">
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Digite sua senha"
-              className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#37618E] focus:border-[#37618E]"
-              required
-            />
-            <div className="flex justify-between mt-5">
-              <div className="flex items-center">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300 rounded"
-                />
-                <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
-                  Manter conectado
-                </label>
-              </div>
-              <a href="#" className="text-sm text-blue-500 hover:underline">
-                Esqueci a senha
-              </a>
+          <Input
+            label="Senha"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Digite sua senha"
+            autoComplete="current-password"
+            className="focus:ring-2 focus:ring-[#37618E] focus:border-[#37618E]"
+            containerClassName="mb-6"
+          />
+
+          <div className="flex justify-between mt-5">
+            <div className="flex items-center">
+              <input
+                id="remember"
+                type="checkbox"
+                className="h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300 rounded"
+              />
+              <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
+                Manter conectado
+              </label>
             </div>
+            <a href="#" className="text-sm text-blue-500 hover:underline">
+              Esqueci a senha
+            </a>
           </div>
 
           {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-[#37618E] text-white rounded hover:bg-[#2E5078] transition duration-200 disabled:opacity-70"
+            className="bg-[#37618E] hover:bg-[#2E5078] duration-200 disabled:opacity-70"
           >
             {loading ? "Entrando..." : "Entrar"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>
