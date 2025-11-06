@@ -1,3 +1,5 @@
+import { getCustomerById as getCustomerByIdApi } from "../api/clients.js";
+
 export const formatCpfCnpj = (value = "") => {
   const digits = value.replace(/\D/g, "");
 
@@ -272,3 +274,13 @@ export const mapCustomerForEdition = (customer = {}) => {
 
 export const mapCustomersForEdition = (customers = []) =>
   customers.map((customer) => mapCustomerForEdition(customer));
+
+export const getCustomerById = async (authorizedRequest, id) => {
+  const payload = await getCustomerByIdApi(authorizedRequest, id);
+  const normalized = normalizeCustomerPayload(payload);
+
+  return {
+    customer: normalized,
+    form: mapCustomerForEdition(payload),
+  };
+};

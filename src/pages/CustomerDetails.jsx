@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Layout from "../app/Layout";
 import CustomerFormFields from "../components/clients/CustomerFormFields";
+import useAuth from "../hooks/useAuth";
+import { getCustomerById } from "../services/clientService";
 
 const initialFormState = {
   telefone1: "",
@@ -23,40 +25,63 @@ export default function CustomerDetails() {
   const { id } = useParams();
   const [customer, setCustomer] = useState(null);
   const [form, setForm] = useState(initialFormState);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { authorizedRequest } = useAuth();
 
   useEffect(() => {
-    // substituir depois pela API real
-    const fetchedCustomer = {
-      id,
-      type: "fisica",
-      nome: "Maria Silva",
-      cpf: "123.456.789-00",
-      telefone1: "(11) 99999-9999",
-      whatsapp1: true,
-      telefone2: "(11) 98888-7777",
-      whatsapp2: false,
-      celular: "(11) 97777-6666",
-      whatsappCelular: true,
-      email: "maria@email.com",
-      cep: "01000-000",
-      endereco: "Rua das Flores",
-      numero: "123",
-      complemento: "Apto 12",
-      bairro: "Centro",
-      cidade: "São Paulo",
+    let isActive = true;
+
+    const fetchCustomer = async () => {
+      if (!id) {
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { customer: fetchedCustomer, form: fetchedForm } =
+          await getCustomerById(authorizedRequest, id);
+
+        if (!isActive) {
+          return;
+        }
+
+        setCustomer(fetchedCustomer);
+
+        const nextFormState = { ...initialFormState };
+
+        Object.keys(initialFormState).forEach((key) => {
+          if (fetchedForm && fetchedForm[key] !== undefined) {
+            nextFormState[key] = fetchedForm[key];
+          } else if (fetchedCustomer && fetchedCustomer[key] !== undefined) {
+            nextFormState[key] = fetchedCustomer[key];
+          }
+        });
+
+        setForm(nextFormState);
+      } catch (err) {
+        if (!isActive) {
+          return;
+        }
+
+        console.error("Erro ao carregar cliente:", err);
+        setCustomer(null);
+        setError(err);
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
+      }
     };
 
-    setCustomer(fetchedCustomer);
-    setForm((prev) => ({
-      ...prev,
-      ...Object.keys(initialFormState).reduce((acc, key) => {
-        if (fetchedCustomer[key] !== undefined) {
-          acc[key] = fetchedCustomer[key];
-        }
-        return acc;
-      }, {}),
-    }));
-  }, [id]);
+    fetchCustomer();
+
+    return () => {
+      isActive = false;
+    };
+  }, [authorizedRequest, id]);
 
   const handleChange = (event) => {
     const { name, type, value, checked } = event.target;
@@ -66,7 +91,7 @@ export default function CustomerDetails() {
     }));
   };
 
-  if (!customer) {
+  if (loading) {
     return (
       <Layout title="Detalhes do Cliente">
         <div className="p-10 text-gray-500">Carregando...</div>
@@ -74,14 +99,37 @@ export default function CustomerDetails() {
     );
   }
 
+  if (error) {
+    return (
+      <Layout title="Detalhes do Cliente">
+        <div className="p-10 text-red-600">
+          {error.message ?? "Não foi possível carregar os dados do cliente."}
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!customer) {
+    return (
+      <Layout title="Detalhes do Cliente">
+        <div className="p-10 text-gray-500">Cliente não encontrado.</div>
+      </Layout>
+    );
+  }
+
   const isPessoaFisica = customer.type === "fisica";
   const displayName = isPessoaFisica
-    ? customer.nome ?? customer.name ?? "Cliente"
-    : customer.razaoSocial ?? customer.nome ?? customer.name ?? "Cliente";
+    ? customer.nome || customer.nomeFantasia || customer.name || "Cliente"
+    :
+        customer.razaoSocial ||
+        customer.nomeFantasia ||
+        customer.nome ||
+        customer.name ||
+        "Cliente";
   const documentLabel = isPessoaFisica ? "CPF" : "CNPJ";
   const documentValue = isPessoaFisica
-    ? customer.cpf ?? customer.document
-    : customer.cnpj ?? customer.document;
+    ? customer.cpf || customer.document
+    : customer.cnpj || customer.document;
 
   return (
     <Layout title="Detalhes do Cliente">
