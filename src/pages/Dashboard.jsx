@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext.jsx";
+import { useAuth } from "../hooks/useAuth";
 import { X, Menu } from "lucide-react";
 
 export default function Dashboard() {

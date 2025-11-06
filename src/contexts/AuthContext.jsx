@@ -1,16 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { createContext, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { buildApiUrl } from "../config/api";
 
-const AuthContext = createContext();
-export const useAuth = () => useContext(AuthContext);
+export const AuthContext = createContext();
 
 const getStoredObject = (key) => {
   try {
